@@ -64,14 +64,13 @@ export const getSingleProduct = BigPromise(async (req, res, next) => {
 
 export const getAllProduct = BigPromise(async (req, res, next) => {
   const products = await Product.find();
-  console.log("products", products);
   if (!products) {
     return next(new Error("something went wrong with database.try again"));
   }
 
   res.status(200).json({
-    products,
     success: true,
+    products,
   });
 });
 

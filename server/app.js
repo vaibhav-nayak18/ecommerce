@@ -27,10 +27,12 @@ app.use(
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import productRoute from "./routes/productRoute.js";
+import { orderRouter } from "./routes/orderRoutes.js";
 
 // router middleware
 app.use("/", authRoute);
 app.use("/", userRoute);
-app.use("/product/", productRoute);
+app.use("/product", productRoute);
+app.use("/order", orderRouter);
 
 export default app;
