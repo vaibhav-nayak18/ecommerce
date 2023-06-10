@@ -4,6 +4,13 @@ import { cookieToken } from "../utils/cookieToken.js";
 import { roleArray } from "../utils/util.js";
 
 export const login = BigPromise(async (req, res, next) => {
+  if (req.cookies?.token) {
+    res.status(200).json({
+      success: true,
+      token: req.cookies.token,
+    });
+    return next();
+  }
   const { email, password } = req.body;
   if (!(email && password)) {
     return next(new Error("email and password are required"));
@@ -34,7 +41,7 @@ export const register = BigPromise(async (req, res, next) => {
 
   const isRoleExist = roleArray.some((item) => item === role);
   if (!isRoleExist) {
-    return next(new Error(`${role} is not exist.`));
+    return next(new Error(`${role} does not exist.`));
   }
 
   let user = await User.findOne({ email });
@@ -57,4 +64,30 @@ export const register = BigPromise(async (req, res, next) => {
 
   cookieToken(user, res);
   next();
+});
+
+export const logout = BigPromise(async (req, res, next) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "logout success",
+  });
+});
+
+export const authenticate = BigPromise(async (req, res, next) => {
+  const token =
+    req.cookies?.token || req.header("Authentication").replace("Bearer ", "");
+
+  if (!token) {
+    return next(new Error("session expired. please login again"));
+  }
+
+  res.status(200).json({
+    success: true,
+    token,
+  });
 });

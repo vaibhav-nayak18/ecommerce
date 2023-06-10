@@ -1,6 +1,7 @@
 import { BigPromise } from "../middlewares/BigPromise.js";
 import { Order } from "../models/order.js";
 import { Product } from "../models/product.js";
+import { WhereClause } from "../utils/whereClause.js";
 
 export const placeOrder = BigPromise(async (req, res, next) => {
   const { productId, noOfItems } = req.body;
@@ -67,13 +68,28 @@ export const cancelOrder = BigPromise(async (req, res, next) => {
 });
 
 export const getAllOrder = BigPromise(async (req, res, next) => {
-  const orders = await Order.find().where("user").equals(req.user._id);
+  // const orders = await Order.find().where("user").equals(req.user._id);
+
+  // if (!orders) {
+  //   return next(new Error("could not fetch the orders"));
+  // }
+
+  const { resultPerPage } = req.body;
+
+  const orderObj = new WhereClause(Order.find(), req.query).search().filter();
+
+  let orders = await orderObj.base;
+
+  const filteredOrderLength = orders.length;
+
+  orderObj.pager(resultPerPage);
+  orders = await orderObj.base.clone();
 
   if (!orders) {
     return next(new Error("could not fetch the orders"));
   }
-
   res.status(201).json({
     orders,
+    filteredOrderLength,
   });
 });

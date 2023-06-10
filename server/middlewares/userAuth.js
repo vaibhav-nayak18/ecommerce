@@ -15,6 +15,7 @@ export const isLoggedIn = BigPromise(async (req, res, next) => {
   const decoded = jwt.verify(token, process.env.TOKEN_CODE);
 
   const user = await User.findById(decoded.id);
+  user.password = undefined;
 
   if (!user) {
     return next(new Error("db error, could not find user, try again"));
