@@ -1,5 +1,7 @@
 import { BigPromise } from "../middlewares/BigPromise.js";
 import { Product } from "../models/product.js";
+import user from "../models/user.js";
+import User from "../models/user.js";
 import { WhereClause } from "../utils/whereClause.js";
 
 export const addProduct = BigPromise(async (req, res, next) => {
@@ -102,5 +104,117 @@ export const mySellingProduct = BigPromise(async (req, res, next) => {
   res.status(201).json({
     success: true,
     products,
+  });
+});
+
+export const addToCart = BigPromise(async (req, res, next) => {
+  const { productId, noOfItems } = req.body;
+
+  if (!(productId && noOfItems)) {
+    return next(new Error("product id and no of items is required"));
+  }
+
+  if (noOfItems <= 0) {
+    return next(new Error("no of items should be positive"));
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return next(new Error("could not fetch the user"));
+  }
+
+  let isPresent = false;
+  const items = user.cart;
+  for (let index = 0; index < items.length; index++) {
+    if (items[index].product.equals(productId)) {
+      isPresent = true;
+      items[index].numberOfItem += noOfItems;
+      break;
+    }
+  }
+
+  if (!isPresent) {
+    items.push({
+      product: productId,
+      numberOfItem: noOfItems,
+    });
+  }
+
+  user.cart = items;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    cartItems: user.cart,
+  });
+});
+
+export const getCartItems = BigPromise(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return next(new Error("could not fetch the database"));
+  }
+
+  res.status(200).json({
+    success: true,
+    cartItems: user.cart,
+  });
+});
+
+export const removeCart = BigPromise(async (req, res, next) => {
+  const { productId, noOfItems } = req.body;
+
+  if (!(productId && noOfItems)) {
+    return next(new Error("product id and no of items is required"));
+  }
+
+  if (noOfItems <= 0) {
+    return next(new Error("no of items should be positive"));
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return next(new Error("could not fetch the user"));
+  }
+
+  let isPresent = false;
+  const items = user.cart;
+  for (let index = 0; index < items.length; index++) {
+    if (items[index].product.equals(productId)) {
+      isPresent = true;
+      items[index].numberOfItem -= noOfItems;
+      break;
+    }
+  }
+
+  if (!isPresent) {
+    return next(new Error("this product does not exist. try again"));
+  }
+
+  user.cart = items;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    cartItems: user.cart,
+  });
+});
+
+export const removeAllCart = BigPromise(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return next(new Error("could not fetch the data."));
+  }
+  user.cart = [];
+  await user.save();
+
+  res.status(201).json({
+    success: true,
   });
 });
